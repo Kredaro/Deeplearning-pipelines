@@ -1,10 +1,45 @@
 
-Doing Deep learning on large data sets at scale has it’s own challenges, But here are the major parts of the Deep learning life cycle,
+
+What does this blog contain&nbsp;?
+
+- Broad parts of a production grade deep learning system
+- How Minio adds value to each piece of the Deep learning life cycle?&nbsp;
+- Data ingestion, Loading data to Minio.&nbsp;
+- Exploring data.&nbsp;
+- Cleaning data.&nbsp;
+
+There are three major parts to building a production grade Deep learning systems,.Doing Deep learning on large data sets at scale has it’s own challenges, But here are the major parts of the Deep learning life cycle,
+
+ ![](https://cdn-images-1.medium.com/max/1600/1*UcS8_9SCQWqfKRfiGN4i4A.png)
+*\<Need new illustration, picked from internet\>*
+
+ ![](https://cdn-images-1.medium.com/max/1600/1*ISJEeNvyCfcswGB7YQAl1Q.jpeg)
+*Minio adds value to all stages of a Deep learning life&nbsp;cycle.&nbsp;*
+
+If you look at the technologies used for various parts of the Deep learning life cycle, **Minio** adds value to each one of them.
+
+#### Cooking the data \<Need an illustration for&nbsp;this\>
+
+1. Streaming/Batch data ingestion. Tapping into the source of data.&nbsp;
+2. Storing the data.&nbsp;
+3. Exploring data.&nbsp;
+4. Cleaning the data
+5. Pre-processing the data.&nbsp;
+6. Sampling the data for training, testing and validation.
+
+#### &nbsp;Cooking the model \<Need an illustration for&nbsp;this\>
+
+1. Creating the model.
+
+#### Serving the food (Productionizing the model) \< Need an illustration for&nbsp;this\>
+
+- Storing the trained model.
+- Creating API for the trained model.
 
 #### Data ingestion
 
  ![](https://cdn-images-1.medium.com/max/1600/1*S7lMbuLI2gJYlEWWylj4bQ.jpeg)
-*\< note: I need to use correct icons and make a GIF of data moving through the&nbsp;system\>*
+*\<Rash note: I need to use correct icons and make a GIF of data moving through the&nbsp;system\>*
 
 #### Preprocessing
 
