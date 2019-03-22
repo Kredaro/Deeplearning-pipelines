@@ -6,8 +6,13 @@ Series of projects and tutorials around using Building production grade Deep lea
 #### Content for blog&nbsp;1
 
 - A brief architecture for a simple/scalable Deep learning pipeline.&nbsp;
+- Building blocks of a real world Deep learning pipeline.&nbsp;
 - Explain the different building blocks.&nbsp;
 - HDFS vs Minio for storage layer.&nbsp;
+- Training on batch data, storing Data into Minio.&nbsp;
+- Data exploration using Spark SQL, Minio and Jupyter notebook.
+- Data preparation.
+
 - Hello world tensorflow + Minio.&nbsp;
 - Docker container to run the example.&nbsp;
 - Code example to run Hello World tensorflow on Minio play.&nbsp;
