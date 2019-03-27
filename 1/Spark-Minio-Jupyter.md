@@ -317,3 +317,42 @@ scala>
 
 You can see, only the fields with value age > 19 are returned.
 For more, checkout the [spark-select project](https://github.com/minio/spark-select).
+
+
+## Spark-Shell using PySpark and Minio
+Make sure all of the `aws-java-sdk` jars are present under `$SPARK_HOME/jars/` or added to the `spark.jars.packages` in *spark-defaults.conf* file, before executing the following commands :
+
+```sh
+# Execute pyspark with spark-select package by minio
+pyspark --packages io.minio:spark-select_2.11:2.0
+```
+
+```python
+Welcome to
+      ____              __
+     / __/__  ___ _____/ /__
+    _\ \/ _ \/ _ `/ __/  '_/
+   /__ / .__/\_,_/_/ /_/\_\   version 2.3.0
+      /_/
+
+Using Python version 2.7.12 (default, Nov 12 2018 14:36:49)
+SparkSession available as 'spark'.
+>>> from pyspark.sql.types import *
+>>> schema = StructType([StructField('name', StringType(), True),StructField('age', IntegerType(), True)])
+>>> df = spark.read.format("minioSelectCSV").schema(schema).load("s3://sjm-airlines/people.csv")
+>>> df.show()
++-------+---+                                                                   
+|   name|age|
++-------+---+
+|Michael| 31|
+|   Andy| 30|
+| Justin| 19|
++-------+---+
+>>> df.select("*").filter("age > 19").show()
++-------+---+
+|   name|age|
++-------+---+
+|Michael| 31|
+|   Andy| 30|
++-------+---+
+```
