@@ -327,7 +327,8 @@ Make sure all of the `aws-java-sdk` jars are present under `$SPARK_HOME/jars/` o
 pyspark --packages io.minio:spark-select_2.11:2.0
 ```
 
-```python
+You should be seeing the following screen :
+```
 Welcome to
       ____              __
      / __/__  ___ _____/ /__
@@ -337,6 +338,11 @@ Welcome to
 
 Using Python version 2.7.12 (default, Nov 12 2018 14:36:49)
 SparkSession available as 'spark'.
+>>>
+```
+
+Let's execute following lines to use pyspark with minio select :
+```python
 >>> from pyspark.sql.types import *
 >>> schema = StructType([StructField('name', StringType(), True),StructField('age', IntegerType(), True)])
 >>> df = spark.read.format("minioSelectCSV").schema(schema).load("s3://sjm-airlines/people.csv")
@@ -437,10 +443,10 @@ p2j spark-minio.py
 ```
 
 ### Running .ipynb file from the jupyter notebook UI
-Let's open the UI running at https://(server-public-ip-address/localhost):8888/
+Let's open the UI running at http://(server-public-ip-address/localhost):8888/
 
-You should be seeing something like this :
+Enter the jupyter notebok password (or the token) and then, you should be seeing something like this :
 ![Jupyter Notebook](https://i.imgur.com/4uIf5Ta.jpg)
 
-Select `spark-minio.py` file and click on run, you should be getting the screen below :
-![Jupyter Notebook](https://i.imgur.com/UoXJxzX.jpg)
+Select **spark-minio.ipynb** file and click on run, if everything went right, you should be getting the screen below :
+![Jupyter Notebook](https://i.imgur.com/PyCE6yU.jpg)
