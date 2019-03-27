@@ -296,7 +296,7 @@ import org.apache.spark.sql.types._
 defined object app
 
 scala> app.main(Array())
-+-------+---+                                                                   
++-------+---+
 |   name|age|
 +-------+---+
 |Michael| 31|
@@ -341,7 +341,7 @@ SparkSession available as 'spark'.
 >>> schema = StructType([StructField('name', StringType(), True),StructField('age', IntegerType(), True)])
 >>> df = spark.read.format("minioSelectCSV").schema(schema).load("s3://sjm-airlines/people.csv")
 >>> df.show()
-+-------+---+                                                                   
++-------+---+
 |   name|age|
 +-------+---+
 |Michael| 31|
@@ -356,3 +356,91 @@ SparkSession available as 'spark'.
 |   Andy| 30|
 +-------+---+
 ```
+
+## Minio, Spark with Jupyter Notebook
+
+### Setting up environment, installing jupyter and running
+```sh
+# Downloading shell script to install Jupyter using Anaconda
+wget https://repo.anaconda.com/archive/Anaconda3-2018.12-Linux-x86_64.sh
+# Making the shell script executable
+chmod +x ./Anaconda3-2018.12-Linux-x86_64.sh
+# Running the shell script
+./Anaconda3-2018.12-Linux-x86_64.sh
+# Install findspark and pyspark
+python -m pip install findspark pyspark
+# In case of the jupyter notebook does not find the modules, try installing with conda
+conda install findspark
+# (Optinal) Setting up jupyter notebook password, enter the desired password (If not set, have to use randomly generated tokens each time)
+jupyter notebook password
+# Running Jupyter Notebook and making it available to public at port 8888
+jupyter notebook --ip 0.0.0.0  --port 8888
+```
+
+If everything goes well, you should be seeing the following :
+```sh
+[I 06:50:01.156 NotebookApp] JupyterLab extension loaded from /home/cb567/anaconda3/lib/python3.7/site-packages/jupyterlab
+[I 06:50:01.157 NotebookApp] JupyterLab application directory is /home/cb567/anaconda3/share/jupyter/lab
+[I 06:50:01.158 NotebookApp] Serving notebooks from local directory: /home/cb567
+[I 06:50:01.158 NotebookApp] The Jupyter Notebook is running at:
+[I 06:50:01.158 NotebookApp] http://(instance-4 or 127.0.0.1):8888/
+[I 06:50:01.158 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+```
+
+### Converting python scripts(.py) file to jupyter notebook(.ipynb) file
+```sh
+# Installing p2j using python-pip
+pip install p2j
+
+# Generating .ipynb file out of some sample script.py using p2j
+p2j script.py
+```
+
+### Converting jupyter notebook(.ipynb) file to python scripts(.py) file
+```sh
+# Generating script.py file out of some sample .ipynb file using jupyter nbconvert
+jupyter nbconvert script.ipynb
+```
+
+### Creating sample python file
+Let's create a python file **spark-minio.py** with the codes below :
+
+```python
+# Import sys and print the python environment
+import sys
+print(sys.executable)
+# Import findspark to find spark make it accessible at run time
+import findspark
+findspark.init()
+# Import pyspark and its components
+import pyspark
+from pyspark.sql.types import *
+from pyspark.sql import SparkSession
+
+# Creating SparkSession
+spark = SparkSession.builder.getOrCreate()
+# Creating schema of the CSV fields
+schema = StructType([StructField('name', StringType(), True),StructField('age', IntegerType(), True)])
+# Creating a dataframe to use minioSelectCSV with the specified schema and load data from a CSV in S3 
+df = spark.read.format("minioSelectCSV").schema(schema).load("s3://sjm-airlines/people.csv")
+# Displaying all data in the CSV
+df.show()
+# Displaying all the data in the csv for which age is greater than 19
+df.select("*").filter("age > 19").show()
+```
+
+Now, converting the python code(spark-minio.py) to jupyter notebook compatible file (.ipynb) :
+
+```sh
+# Generating spark-minio.ipynb file out of spark-minio.py
+p2j spark-minio.py
+```
+
+### Running .ipynb file from the jupyter notebook UI
+Let's open the UI running at https://(server-public-ip-address/localhost):8888/
+
+You should be seeing something like this :
+![Jupyter Notebook](https://i.imgur.com/4uIf5Ta.jpg)
+
+Select `spark-minio.py` file and click on run, you should be getting the screen below :
+![Jupyter Notebook](https://i.imgur.com/UoXJxzX.jpg)
