@@ -449,4 +449,4 @@ Enter the jupyter notebok password (or the token) and then, you should be seeing
 ![Jupyter Notebook](https://i.imgur.com/4uIf5Ta.jpg)
 
 Select **spark-minio.ipynb** file and click on run, if everything went right, you should be getting the screen below :
-![Jupyter Notebook](https://i.imgur.com/PyCE6yU.jpg)
+![Jupyter Notebook](https://i.imgur.com/X47Kv93.jpg)
