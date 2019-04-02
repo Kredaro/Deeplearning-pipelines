@@ -1,4 +1,4 @@
-# Minio-Sparks
+# Minio-Sparks-Jupyter-Pandas
 Minio is open-source cloud object storage server. It follows Amazon S3 protocol and at times referred as Open-Source Amazon S3 alternative, which anyone can host on their own machines. It was developed with the focus to be efficient storage and retrieval of objects. 
 As the requirements of user change, it is deemed to evolve to meet those requirements. These change in requirements were driven by emerging big data, analytics and machine learning workflows. This lead to the creation of S3 Select API, which gives SQL query powers to the object storage. After which, Minio has rolled out its implemention of Select API. 
 
@@ -19,8 +19,8 @@ With the S3 Select API, applications can now download specific subset of an obje
 ## Setting up system configuration (VM/Instance)
 The system configuration selected for the task is as mentioned below :
 
- * 16 cores CPUs
- * 60 GB memory (RAM)
+ * 10 cores CPUs
+ * 40 GB memory (RAM)
  * 200 GB Disk Size (ROM)
 
 
@@ -371,13 +371,19 @@ Let's execute following lines to use pyspark with minio select :
 wget https://repo.anaconda.com/archive/Anaconda3-2018.12-Linux-x86_64.sh
 # Making the shell script executable
 chmod +x ./Anaconda3-2018.12-Linux-x86_64.sh
-# Running the shell script
-./Anaconda3-2018.12-Linux-x86_64.sh
-# Install findspark and pyspark
-python -m pip install findspark pyspark
-# In case of the jupyter notebook does not find the modules, try installing with conda
-conda install findspark
-# (Optinal) Setting up jupyter notebook password, enter the desired password (If not set, have to use randomly generated tokens each time)
+# Running the shell script with bash
+bash Anaconda3-2018.12-Linux-x86_64.sh
+# Create new conda environment with minimal environment with only python installed.
+conda create -n myconda python=3
+# Put your self inside this environment run
+conda activate myconda
+# Verify the Anaconda Python v3.x Terminal inside the environment. To exit, press CTRL+D or `exit()`
+python
+# Install Jupyter Notebook inside the environment
+conda install jupyter
+# Install findspark inside the environment using conda-forge channel
+conda install -c conda-forge findspark
+# (Optional) Setting up jupyter notebook password, enter the desired password (If not set, have to use randomly generated tokens each time)
 jupyter notebook password
 # Running Jupyter Notebook and making it available to public at port 8888
 jupyter notebook --ip 0.0.0.0  --port 8888
@@ -385,15 +391,23 @@ jupyter notebook --ip 0.0.0.0  --port 8888
 
 If everything goes well, you should be seeing the following :
 ```sh
-[I 06:50:01.156 NotebookApp] JupyterLab extension loaded from /home/cb567/anaconda3/lib/python3.7/site-packages/jupyterlab
-[I 06:50:01.157 NotebookApp] JupyterLab application directory is /home/cb567/anaconda3/share/jupyter/lab
-[I 06:50:01.158 NotebookApp] Serving notebooks from local directory: /home/cb567
+[I 06:50:01.156 NotebookApp] JupyterLab extension loaded from /home/prashant/anaconda3/lib/python3.7/site-packages/jupyterlab
+[I 06:50:01.157 NotebookApp] JupyterLab application directory is /home/prashant/anaconda3/share/jupyter/lab
+[I 06:50:01.158 NotebookApp] Serving notebooks from local directory: /home/prashant
 [I 06:50:01.158 NotebookApp] The Jupyter Notebook is running at:
-[I 06:50:01.158 NotebookApp] http://(instance-4 or 127.0.0.1):8888/
+[I 06:50:01.158 NotebookApp] http://(instance-1 or 127.0.0.1):8888/
 [I 06:50:01.158 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
 ```
 
-### Converting python scripts(.py) file to jupyter notebook(.ipynb) file
+#### Deactivate conda virtual environment
+Example:
+```sh
+# Usage: conda deactivate <environment-name>
+conda deactivate myconda
+```
+
+#### Converting python scripts(.py) file to jupyter notebook(.ipynb) file
+Example:
 ```sh
 # Installing p2j using python-pip
 pip install p2j
@@ -402,7 +416,8 @@ pip install p2j
 p2j script.py
 ```
 
-### Converting jupyter notebook(.ipynb) file to python scripts(.py) file
+#### Converting jupyter notebook(.ipynb) file to python scripts(.py) file
+Example:
 ```sh
 # Generating script.py file out of some sample .ipynb file using jupyter nbconvert
 jupyter nbconvert script.ipynb
@@ -450,3 +465,173 @@ Enter the jupyter notebok password (or the token) and then, you should be seeing
 
 Select **spark-minio.ipynb** file and click on run, if everything went right, you should be getting the screen below :
 ![Jupyter Notebook](https://i.imgur.com/X47Kv93.jpg)
+
+### Running Some Live Examples
+In Jupyter Notebook, go to File Tab > New Notebook > Python 3 (Or any other kernel). Try the following pyspark example on the data on present in Minio : 
+```py
+import findspark
+findspark.init()
+import pyspark
+from pyspark.sql.types import *
+from pyspark.sql import SparkSession
+spark = SparkSession.builder.getOrCreate()
+schema = StructType([StructField('name', StringType(), True),StructField('age', IntegerType(), True)])
+df = spark.read.format("minioSelectCSV").schema(schema).load("s3://sjm-airlines/people", compression="gzip")
+df.createOrReplaceTempView("people")
+print("List of all people :")
+df2.show()
+print("People with age less than 20 :")
+df2 = spark.sql("SELECT * FROM people where age>20")
+df2.show()
+```
+
+If the steps are properly followed, you should be seeing following in the jupyter notebook:
+```scala
+List of all people :
++-------+---+
+|   name|age|
++-------+---+
+|Michael| 31|
+|   Andy| 30|
++-------+---+
+
+People with age less than 20 :
++-------+---+
+|   name|age|
++-------+---+
+|Michael| 31|
+|   Andy| 30|
++-------+---+
+```
+
+For the next example, we are gonna use SQL query capability of Spark dataframe on comparatively big CSV with **13 header fields** and **2000251** entries. For the task, at first, we are gonna download the CSV with gzipped compression from the following link.
+```sh
+wget https://gist.github.com/coolboi567/d65254b1ac4b64c5969bd6309d8f8424/raw/955d6eccc4990b7fed0c421c96e7bd290bab952e/natality00.gz
+```
+
+Create a new bucket in Minio, here, we are naming the bucket `spark-experiment` and upload the downloaded file to that bucket.
+You can use Minio UI for the task. Or, you can use Minio Client - `mc` for the same.
+```sh
+# Go to the `data` folder which Minio Server is pointing to 
+cd ~/data
+# Creating a new bucket
+mc mb spark-experiment
+# Copying the compressed file inside the bucket
+mc cp ../natality00.gz spark-experiment
+```
+
+Now, let's try the following script in Jupyter Noteboook. You can either create new cell in the same old notebook or create a new notebook for running the script. 
+```python
+import findspark
+findspark.init()
+import pyspark
+from pyspark.sql.types import *
+from pyspark.context import SparkContext
+from pyspark.sql.session import SparkSession
+
+sc = SparkContext.getOrCreate()
+spark = SparkSession(sc)
+
+df = spark.read.format("csv").option("header", "true").load("s3a://spark-experiment/natality00.gz")
+query="SELECT is_male, count(*) as count, AVG(weight_pounds) AS avg_weight FROM natality GROUP BY is_male"
+df.createOrReplaceTempView("natality")
+df2 = spark.sql(query)
+df2.show()
+```
+
+Upon running the script in notebook, you should get the following output:
+```scala
++-------+-------+-----------------+
+|is_male|  count|       avg_weight|
++-------+-------+-----------------+
+|  false| 975147| 7.17758067338709|
+|   true|1025104|7.439839161360215|
++-------+-------+-----------------+
+```
+
+## Visualization with charts and graphs using Pandas
+
+### Installation
+Install Pandas using `conda`. PySpark dataframe requires `pandas >= 0.19.2` for executing any of the features by pandas.
+```sh
+# Installing pandas and matplotlib. Make sure inside the created conda virtual environment, when you are running the following command
+conda install pandas matplotlib
+```
+
+### Example 1
+Let's display some charts on the report that we got in the previous example. Let's create a new cell on same notebook rather than integrating the following snippet in the above code, to reduce the time to plot multiple charts on same report.
+```python
+df3 = df2.toPandas()
+df3.plot(x='is_male', y='count', kind='bar')
+df3.plot(x='is_male', y='avg_weight', kind='bar')
+```
+![Total Count](https://i.imgur.com/8OlZNCP.jpg "Total Count") ![Average Weight](https://i.imgur.com/Rym7DkS.jpg "Average Weight")
+
+**Observation**: From the generated chart, we can observe that gender of the child doesn't have any signficant role neither in average weight of the child nor wide difference can be seen in total count of the two gender divisions.
+
+### Example 2
+Now, let us try another example. Let's create a new notebook for this. If you don't wish to create a new one, you can try on a new cell of the previous notebook.
+```python
+import findspark
+findspark.init()
+import pyspark
+from pyspark.sql.types import *
+
+from pyspark.context import SparkContext
+from pyspark.sql.session import SparkSession
+sc = SparkContext.getOrCreate()
+spark = SparkSession(sc)
+
+df = spark.read.format("csv").option("header", "true").load("s3a://spark-experiment/natality00.gz")
+query="SELECT mother_age, count(*) as count, AVG(weight_pounds) AS avg_weight FROM natality GROUP BY mother_age"
+df.createOrReplaceTempView("natality")
+print("Based on mother_age, total count and average weight is as follow : ")
+df2 = spark.sql(query)
+df3 = df2.toPandas()
+df4= df3.sort_values('mother_age')
+print("***DONE***")
+```
+
+After running the program, when it prints `DONE`. Create a new cell below and run the following snippet:
+```python
+df4.plot(x='mother_age', y='count')
+df4.plot(x='mother_age', y='avg_weight')
+```
+
+![Total Count](https://i.imgur.com/gTWkH8i.jpg "Total Count") ![Average Weight](https://i.imgur.com/Az67FC3.jpg "Average Weight")
+**Observation**: We can observe that, most of the mothers are between 20-30 age range when they gave birth. While the average weight of the children is shows some decline in case of mothers at young age, it shows significant decrease in children's average weight in case of mothers at old age.
+
+### Example 3
+This one will be one interesting one. We will plot a chart with scatter graph.
+```python
+import findspark
+findspark.init()
+import pyspark
+from pyspark.sql.types import *
+
+from pyspark.context import SparkContext
+from pyspark.sql.session import SparkSession
+sc = SparkContext.getOrCreate()
+spark = SparkSession(sc)
+
+df = spark.read.format("csv").option("header", "true").load("s3a://spark-experiment/natality00.gz")
+query="SELECT INT(gestation_weeks), COUNT(*) AS count, AVG(weight_pounds) AS avg_weight FROM natality GROUP BY gestation_weeks"
+df.createOrReplaceTempView("natality")
+print("Based on gestation_weeks, total count and average weight is as follow : ")
+df2 = spark.sql(query)
+df3 = df2.toPandas()
+df4= df3.sort_values('gestation_weeks')
+print("***DONE***")
+```
+Like we did before, after `DONE` is printed. Create a new cell below with the following snippet. Here, we are introducing `matplotlib axes object(ax)` and `dataframe.describe()`.
+```python
+import matplotlib.pyplot as plt
+fig, ax = plt.subplots()
+df4.plot(kind="scatter", x="gestation_weeks", y="avg_weight", s=100, c="count", cmap="RdYlGn", ax=ax);
+df4.describe()
+```
+![Scatter Chart](https://i.imgur.com/AF6oCVk.jpg "Scatter Chart") ![DataFrame Describe](https://i.imgur.com/X8Cw0jF.jpg "DataFrame Describe")
+**Observation**: From the scattar graph, it can be seen that maximum number of mothers' gestation period was 40 weeks and children born around this period are mostly of more weight than rest. We can also see that there are around 100k entries for which *gestation_weeks* is 99, which is not possible in reality. So, we can be sure that these are the dummy values.
+
+Note: List of possible `cmap` i.e. *colormap* can be found [here](https://gist.github.com/coolboi567/ab86e34febe7dba1d05bf0b2b7f56611)
+>>>>>>> 150aad4f9ff325a99dd6cb596733b08d2f49aaa6:1/Spark-Minio-Jupyter-Pandas.md
