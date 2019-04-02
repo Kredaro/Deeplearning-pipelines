@@ -636,6 +636,6 @@ df4.plot(kind="scatter", x="gestation_weeks", y="avg_weight", s=100, c="count", 
 df4.describe()
 ```
 ![Scatter Chart](https://i.imgur.com/AF6oCVk.jpg "Scatter Chart") ![DataFrame Describe](https://i.imgur.com/X8Cw0jF.jpg "DataFrame Describe")
-**Observation**: From the scattar graph, it can be seen that maximum number of mothers' gestation period was 40 weeks and children born around this period are mostly of more weight than rest. We can also see that there are around 100k entries for which *gestation_weeks* is 99, which is not possible in reality. So, we can be conclude that 99 is the dummy value entered for those whose gestation period data wasn't available.
+**Observation**: From the scattar graph, it can be seen that maximum number of mothers' gestation period was 40 weeks and children born around this period are mostly of more weight than rest. It can be seen that there are around 100k entries for which *gestation_weeks* is 99, which is not possible in reality. So, it can be concluded that `99` is the dummy value present for those whose gestation period data wasn't available.
 
 Note: List of possible `cmap` i.e. *colormap* can be found [here](https://gist.github.com/coolboi567/ab86e34febe7dba1d05bf0b2b7f56611)
