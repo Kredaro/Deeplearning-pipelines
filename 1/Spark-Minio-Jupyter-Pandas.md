@@ -548,3 +548,89 @@ Upon running the script in notebook, you should get the following output:
 |   true|1025104|7.439839161360215|
 +-------+-------+-----------------+
 ```
+
+## Visualization with charts and graphs using Pandas
+
+### Installation
+Install Pandas using `conda`. PySpark dataframe requires `pandas >= 0.19.2` for executing any of the features by pandas.
+```sh
+# Installing pandas and matplotlib. Make sure inside the created conda virtual environment, when you are running the following command
+conda install pandas matplotlib
+```
+
+### Example 1
+Let's display some charts on the report that we got in the previous example. Let's create a new cell on same notebook rather than integrating the following snippet in the above code, to reduce the time to plot multiple charts on same report.
+```python
+df3 = df2.toPandas()
+df3.plot(x='is_male', y='count', kind='bar')
+df3.plot(x='is_male', y='avg_weight', kind='bar')
+```
+![Total Count](https://i.imgur.com/8OlZNCP.jpg "Total Count") ![Average Weight](https://i.imgur.com/Rym7DkS.jpg "Average Weight")
+
+**Observation**: From the generated chart, we can observe that gender of the child doesn't have any signficant role neither in average weight of the child nor wide difference can be seen in total count of the two gender divisions.
+
+### Example 2
+Now, let us try another example. Let's create a new notebook for this. If you don't wish to create a new one, you can try on a new cell of the previous notebook.
+```python
+import findspark
+findspark.init()
+import pyspark
+from pyspark.sql.types import *
+
+from pyspark.context import SparkContext
+from pyspark.sql.session import SparkSession
+sc = SparkContext.getOrCreate()
+spark = SparkSession(sc)
+
+df = spark.read.format("csv").option("header", "true").load("s3a://spark-experiment/natality00.gz")
+query="SELECT mother_age, count(*) as count, AVG(weight_pounds) AS avg_weight FROM natality GROUP BY mother_age"
+df.createOrReplaceTempView("natality")
+print("Based on mother_age, total count and average weight is as follow : ")
+df2 = spark.sql(query)
+df3 = df2.toPandas()
+df4= df3.sort_values('mother_age')
+print("***DONE***")
+```
+
+After running the program, when it prints `DONE`. Create a new cell below and run the following snippet:
+```python
+df4.plot(x='mother_age', y='count')
+df4.plot(x='mother_age', y='avg_weight')
+```
+
+![Total Count](https://i.imgur.com/gTWkH8i.jpg "Total Count") ![Average Weight](https://i.imgur.com/Az67FC3.jpg "Average Weight")
+**Observation**: We can observe that, most of the mothers are between 20-30 age range when they gave birth. While the average weight of the children is shows some decline in case of mothers at young age, it shows significant decrease in children's average weight in case of mothers at old age.
+
+### Example 3
+This one will be one interesting one. We will plot a chart with scatter graph.
+```python
+import findspark
+findspark.init()
+import pyspark
+from pyspark.sql.types import *
+
+from pyspark.context import SparkContext
+from pyspark.sql.session import SparkSession
+sc = SparkContext.getOrCreate()
+spark = SparkSession(sc)
+
+df = spark.read.format("csv").option("header", "true").load("s3a://spark-experiment/natality00.gz")
+query="SELECT INT(gestation_weeks), COUNT(*) AS count, AVG(weight_pounds) AS avg_weight FROM natality GROUP BY gestation_weeks"
+df.createOrReplaceTempView("natality")
+print("Based on gestation_weeks, total count and average weight is as follow : ")
+df2 = spark.sql(query)
+df3 = df2.toPandas()
+df4= df3.sort_values('gestation_weeks')
+print("***DONE***")
+```
+Like we did before, after `DONE` is printed. Create a new cell below with the following snippet. Here, we are introducing `matplotlib axes object(ax)` and `dataframe.describe()`.
+```python
+import matplotlib.pyplot as plt
+fig, ax = plt.subplots()
+df4.plot(kind="scatter", x="gestation_weeks", y="avg_weight", s=100, c="count", cmap="RdYlGn", ax=ax);
+df4.describe()
+```
+![Scatter Chart](https://i.imgur.com/AF6oCVk.jpg "Scatter Chart") ![DataFrame Describe](https://i.imgur.com/X8Cw0jF.jpg "DataFrame Describe")
+**Observation**: From the scattar graph, it can be seen that maximum number of mothers' gestation period was 40 weeks and children born around this period are mostly of more weight than rest. We can also see that there are around 100k entries for which *gestation_weeks* is 99, which is not possible in reality. So, we can be sure that these are the dummy values.
+
+Note: List of possible `cmap` i.e. *colormap* can be found [here](https://gist.github.com/coolboi567/ab86e34febe7dba1d05bf0b2b7f56611)
