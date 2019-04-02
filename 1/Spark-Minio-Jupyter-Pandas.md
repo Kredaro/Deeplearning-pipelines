@@ -342,7 +342,7 @@ SparkSession available as 'spark'.
 ```
 
 Let's execute following lines to use pyspark with minio select :
-```python
+```
 >>> from pyspark.sql.types import *
 >>> schema = StructType([StructField('name', StringType(), True),StructField('age', IntegerType(), True)])
 >>> df = spark.read.format("minioSelectCSV").schema(schema).load("s3://sjm-airlines/people.csv")
@@ -407,16 +407,19 @@ conda deactivate myconda
 ```
 
 #### Converting python scripts(.py) file to jupyter notebook(.ipynb) file
-Example:
 ```sh
 # Installing p2j using python-pip
 pip install p2j
+```
 
+Example:
+```sh
 # Generating .ipynb file out of some sample script.py using p2j
 p2j script.py
 ```
 
 #### Converting jupyter notebook(.ipynb) file to python scripts(.py) file
+You can make use of `nbconvert` that comes along with jupyter.
 Example:
 ```sh
 # Generating script.py file out of some sample .ipynb file using jupyter nbconvert
@@ -464,7 +467,7 @@ Enter the jupyter notebok password (or the token) and then, you should be seeing
 ![Jupyter Notebook](https://i.imgur.com/4uIf5Ta.jpg)
 
 Select **spark-minio.ipynb** file and click on run, if everything went right, you should be getting the screen below :
-![Jupyter Notebook](https://i.imgur.com/PyCE6yU.jpg)
+![Jupyter Notebook](https://i.imgur.com/X47Kv93.jpg)
 
 ### Running Some Live Examples
 In Jupyter Notebook, go to File Tab > New Notebook > Python 3 (Or any other kernel). Try the following pyspark example on the data on present in Minio : 
@@ -508,6 +511,8 @@ For the next example, we are gonna use SQL query capability of Spark dataframe o
 ```sh
 wget https://gist.github.com/coolboi567/d65254b1ac4b64c5969bd6309d8f8424/raw/955d6eccc4990b7fed0c421c96e7bd290bab952e/natality00.gz
 ```
+
+Schema of the CSV and the description of each fields can be found [HERE](https://gist.github.com/coolboi567/d65254b1ac4b64c5969bd6309d8f8424).
 
 Create a new bucket in Minio, here, we are naming the bucket `spark-experiment` and upload the downloaded file to that bucket.
 You can use Minio UI for the task. Or, you can use Minio Client - `mc` for the same.
@@ -599,7 +604,7 @@ df4.plot(x='mother_age', y='avg_weight')
 ```
 
 ![Total Count](https://i.imgur.com/gTWkH8i.jpg "Total Count") ![Average Weight](https://i.imgur.com/Az67FC3.jpg "Average Weight")
-**Observation**: We can observe that, most of the mothers are between 20-30 age range when they gave birth. While the average weight of the children is shows some decline in case of mothers at young age, it shows significant decrease in children's average weight in case of mothers at old age.
+**Observation**: We can observe that, most of the mothers are between 20-30 age range when they gave birth. While the average weight of the children shows some decline in case of mothers at young age, it shows significant decrease in children's average weight in case of mothers at old age.
 
 ### Example 3
 This one will be one interesting one. We will plot a chart with scatter graph.
@@ -623,7 +628,7 @@ df3 = df2.toPandas()
 df4= df3.sort_values('gestation_weeks')
 print("***DONE***")
 ```
-Like we did before, after `DONE` is printed. Create a new cell below with the following snippet. Here, we are introducing `matplotlib axes object(ax)` and `dataframe.describe()`.
+Like we did before, after `DONE` is printed. Create a new cell below with the following snippet. Here, we are introducing *matplotlib's axes object(ax)*, and *dataframe.describe()*.
 ```python
 import matplotlib.pyplot as plt
 fig, ax = plt.subplots()
@@ -631,6 +636,6 @@ df4.plot(kind="scatter", x="gestation_weeks", y="avg_weight", s=100, c="count", 
 df4.describe()
 ```
 ![Scatter Chart](https://i.imgur.com/AF6oCVk.jpg "Scatter Chart") ![DataFrame Describe](https://i.imgur.com/X8Cw0jF.jpg "DataFrame Describe")
-**Observation**: From the scattar graph, it can be seen that maximum number of mothers' gestation period was 40 weeks and children born around this period are mostly of more weight than rest. We can also see that there are around 100k entries for which *gestation_weeks* is 99, which is not possible in reality. So, we can be sure that these are the dummy values.
+**Observation**: From the scattar graph, it can be seen that maximum number of mothers' gestation period was 40 weeks and children born around this period are mostly of more weight than rest. It can be seen that there are around 100k entries for which *gestation_weeks* is 99, which is not possible in reality. So, it can be concluded that `99` is the dummy value present for those whose gestation period data wasn't available.
 
 Note: List of possible `cmap` i.e. *colormap* can be found [here](https://gist.github.com/coolboi567/ab86e34febe7dba1d05bf0b2b7f56611)
