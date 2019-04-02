@@ -1,20 +1,6 @@
 # Minio-Sparks-Jupyter-Pandas
 Minio is open-source cloud object storage server. It follows Amazon S3 protocol and at times referred as Open-Source Amazon S3 alternative, which anyone can host on their own machines. It was developed with the focus to be efficient storage and retrieval of objects. 
-As the requirements of user change, it is deemed to evolve to meet those requirements. These change in requirements were driven by emerging big data, analytics and machine learning workflows. This lead to the creation of S3 Select API, which gives SQL query powers to the object storage. After which, Minio has rolled out its implemention of Select API. 
-
-## Minio S3 Select API support
-The typical data flow prior to the release of the Select API would look like this:
-
- * Applications download the whole object, using `GetObject()` :
- * Load the object into local memory.
- * Start the query process while the object resides in memory.
-
-With the S3 Select API, applications can now download specific subset of an object — only the subset that satisfies given Select query. This directly translates into efficiency and performance:
- * Reduced bandwidth requirements
- * Optimizes compute resources and memory
- * With the smaller memory footprint, more jobs can be run in parallel — with same compute resources
- * As jobs finish faster, there is better utilization of analysts and domain experts
-
+As the requirements of user change, it is deemed to evolve to meet those requirements. These change in requirements were driven by emerging big data, analytics and machine learning workflows. 
 
 ## Setting up system configuration (VM/Instance)
 The system configuration selected for the task is as mentioned below :
@@ -55,7 +41,7 @@ mc --help
 
 
 ## Loading Sample Data
-Follow the steps below to load Sample Data using Minio Client :
+Follow the steps below how to load a Sample Data to S3 using Minio Client :
 ```sh
 # Downloading the sample data of TotalPopulationBySex.csv from UN
 curl "https://esa.un.org/unpd/wpp/DVD/Files/1_Indicators%20(Standard)/CSV_FILES/WPP2017_TotalPopulationBySex.csv" > TotalPopulation.csv
@@ -64,94 +50,8 @@ gzip TotalPopulation.csv
 # Creating a new bucket
 mc mb data/mycsvbucket
 # Copying the compressed file inside bucket
-mc cp TotalPopulation.csv.gz data/mycsvbucket/sampledata/
+mc cp TotalPopulation.csv.gz data/mycsvbucket/
 ```
-
-## Setting up Python Environment in the machine
-Follow the steps below to setup Python v3.6 Environment :
-```sh
-# Adding the PPA for python-3.6
-sudo add-apt-repository ppa:jonathonf/python-3.6
-# Updating the archive list from the repository
-sudo apt-get update
-# Installing python3.6 and pip
-sudo apt-get install -y python3.6 python3-pip
-# Installing python3.6-venv
-sudo apt-get install -y python3.6-venv
-```
-
-## Setting up Virtual Environment for Running Python
-Follow the steps below to setup virtual environment and installing dependencies :
-```sh
-# Creating Virtual Environment for Python v3.6
-python3.6 -m venv ./myvenv
-# Activating the virtual environment
-source ./myvenv/bin/activate
-# Verify versions of python and pip
-python --version
-pip --version
-# Installing Boto3 - AWS SDK for Python
-pip install boto3
-# Installing other dependencies
-pip install -r requirements.txt
-```
-
-## Source Code of Example Python Application using Select-API of S3
-```python
-#!/usr/bin/env/env python3
-import boto3
-import os
-
-s3 = boto3.client('s3',
-                  endpoint_url='http://localhost:9000',
-                  aws_access_key_id=os.environ.get("AWS_ACCESS", 'minio'),
-                  aws_secret_access_key=os.environ.get("AWS_SECRET", 'minio123'),
-                  region_name='us-east-1')
-
-r = s3.select_object_content(
-    Bucket=os.environ.get("BUCKET_NAME",'mycsvbucket'),
-    Key=os.environ.get("OBJECT_PATH", 'sampledata/TotalPopulation.csv.gz'),
-    ExpressionType='SQL',
-    Expression="select * from s3object s where s.Location like '%United States%'",
-    InputSerialization={
-        'CSV': {
-            "FileHeaderInfo": "USE",
-        },
-        'CompressionType': 'GZIP',
-    },
-    OutputSerialization={'CSV': {}},
-)
-
-for event in r['Payload']:
-    if 'Records' in event:
-        records = event['Records']['Payload'].decode('utf-8')
-        print(records)
-    elif 'Stats' in event:
-        statsDetails = event['Stats']['Details']
-        print("Stats details bytesScanned: ")
-        print(statsDetails['BytesScanned'])
-        print("Stats details bytesProcessed: ")
-        print(statsDetails['BytesProcessed'])
-```
-
-[Read More about Select API Here](https://docs.minio.io/docs/minio-select-api-quickstart-guide.html)
-
-
-## Minio Spark-Select
-With MinIO Select API support now generally available, any application can leverage this API to offload query jobs to the MinIO server itself.
-
->However, an application like Spark, used by thousands of enterprises already, if integrated with Select API, would create tremendous impact on the data science landscape — making Spark jobs faster by an order of magnitude.
-
-Technically, it makes perfect sense for Spark SQL to push down possible queries to MinIO, and load only the relevant subset of object to memory for further analysis. This will make Spark SQL faster, use lesser compute/memory resources and allow more Spark jobs to be run concurrently.
-
-![Spark Before/After S3 Select](https://cdn-images-1.medium.com/max/2400/1*A7GwBVHEW_r1OQmLQFvfIg.png)
-
-To support this, we recently released the Spark-Select project to integrate the Select API with Spark SQL. The Spark-Select project is available under Apache License V2.0 on
-
- * GitHub (https://github.com/minio/spark-select)
- * Spark packages (https://spark-packages.org/package/minio/spark-select).
-
-Spark-Select currently supports JSON , CSV and Parquet file formats for query pushdowns. This means the object should be one of these types for the push down to work.
 
 ### Setting up Java Environment for Spark Shell
 ```sh
@@ -192,7 +92,6 @@ sudo tar -C /opt/ -xvf hadoop-2.8.2.tar.gz
 export HADOOP_HOME=/opt/hadoop-2.8.2
 export PATH=$PATH:$HADOOP_HOME/bin
 export SPARK_DIST_CLASSPATH=$(hadoop classpath)
-# 
 export LD_LIBRARY_PATH=$HADOOP_HOME/lib/native
 ```
 
@@ -242,24 +141,27 @@ Open the file `$HADOOP_HOME/etc/hadoop/core-site.xml` for editing. In the exampl
 ```
 
 
-### Minio Spark-Select with Spark Shell
+### Spark Shell on CSV in Minio (S3)
 
 Note: Make sure JAVA_HOME has been set before setting up Spark Shell.
 
 Spark-Select can be integrated with Spark via spark-shell , pyspark , spark-submit etc. You can also add it as Maven dependency, sbt-spark-package or a jar import.
 
-Let’s see an example of using `spark-select` with `spark-shell`.
+Let’s see an example of using `spark-shell`.
 
  * Start Minio server and configure mc to interact with this server.
  * Create a bucket and upload a sample file :
 ```sh
-curl "https://raw.githubusercontent.com/minio/spark-select/master/examples/people.csv" > people.csv
+# Downloading sample csv
+curl "https://gist.githubusercontent.com/coolboi567/dc0d42feb6e8c816ed2ff1778b35a130/raw/4cfa3d1c6fae24e379a5e02b0994c1e06ec61cf3/people.csv" > people.csv
+# Creating a bucket named sjm-airlines
 mc mb data/sjm-airlines
+# Copying the csv to the created bucket using minio client
 mc cp people.csv data/sjm-airlines
 ```
- * Download the sample code from `spark-select` :
+ * Download the sample scala code:
 ```sh
-curl "https://raw.githubusercontent.com/minio/spark-select/master/examples/csv.scala" > csv.scala
+curl "https://gist.githubusercontent.com/coolboi567/dc0d42feb6e8c816ed2ff1778b35a130/raw/f0e54464301c43369b4151e25bb1173718dfbe6a/csv.scala" > csv.scala
 ```
 
  * Downloading depedencies and adding it to `spark` :
@@ -276,16 +178,14 @@ wget http://central.maven.org/maven2/com/amazonaws/aws-java-sdk-s3/1.11.524/aws-
 wget http://central.maven.org/maven2/com/amazonaws/aws-java-sdk-core/1.11.524/aws-java-sdk-core-1.11.524.jar
 wget http://central.maven.org/maven2/com/amazonaws/aws-java-sdk/1.11.524/aws-java-sdk-1.11.524.jar
 wget http://central.maven.org/maven2/com/amazonaws/aws-java-sdk-kms/1.11.524/aws-java-sdk-kms-1.11.524.jar
-# Downloading Minio-Select jar dependency
-wget http://central.maven.org/maven2/io/minio/spark-select_2.11/2.0/spark-select_2.11-2.0.jar
 # Copying all the jars to $SPARK_HOME/jars/
 cp *.jar $SPARK_HOME/jars/
 ```
 
- * Configure Spark with Minio. Detailed steps are available in [this document](https://github.com/minio/cookbook/blob/master/docs/apache-spark-with-minio.md).
- * While starting Spark, use --packages flag to add spark-select package :
+ * Configure Apache Spark with Minio. Detailed steps are available in [this document](https://github.com/minio/cookbook/blob/master/docs/apache-spark-with-minio.md).
+ * Let's start `spark-shell` with the following command. To load some additional package, you can use --packages flag.
 ```java
-$SPARK_HOME/bin/spark-shell --master local[4] --packages io.minio:spark-select_2.11:2.0 
+$SPARK_HOME/bin/spark-shell --master local[4]
 ```
  * After spark-shell is successfully invoked, execute the csv.scala file :
 ```scala
@@ -303,28 +203,26 @@ scala> app.main(Array())
 |   Andy| 30|
 | Justin| 19|
 +-------+---+
-()
+
 +-------+---+
 |   name|age|
 +-------+---+
 |Michael| 31|
 |   Andy| 30|
 +-------+---+
-()
 scala>
 ```
-![Without loading csv.scala file](https://i.imgur.com/otUDSFI.jpg)
 
-You can see, only the fields with value age > 19 are returned.
-For more, checkout the [spark-select project](https://github.com/minio/spark-select).
+![Without loading csv.scala file](https://i.imgur.com/H5wAlno.jpg "Without loading csv.scala file")
 
+You can see that out of 3 entries, we could use SQL-like query to only select those entries with `age > 19`.
 
 ## Spark-Shell using PySpark and Minio
 Make sure all of the `aws-java-sdk` jars are present under `$SPARK_HOME/jars/` or added to the `spark.jars.packages` in *spark-defaults.conf* file, before executing the following commands :
 
 ```sh
-# Execute pyspark with spark-select package by minio
-pyspark --packages io.minio:spark-select_2.11:2.0
+# Running pyspark from Spark_Home Binary
+$SPARK_HOME/bin/pyspark
 ```
 
 You should be seeing the following screen :
@@ -341,11 +239,10 @@ SparkSession available as 'spark'.
 >>>
 ```
 
-Let's execute following lines to use pyspark with minio select :
+Let's execute following lines to verify the same as in Scala-Shell can be achived in PySpark:
 ```
 >>> from pyspark.sql.types import *
->>> schema = StructType([StructField('name', StringType(), True),StructField('age', IntegerType(), True)])
->>> df = spark.read.format("minioSelectCSV").schema(schema).load("s3://sjm-airlines/people.csv")
+>>> df = spark.read.format("csv").option("header", "true").load("s3a://sjm-airlines/people.csv")
 >>> df.show()
 +-------+---+
 |   name|age|
@@ -445,8 +342,8 @@ from pyspark.sql import SparkSession
 spark = SparkSession.builder.getOrCreate()
 # Creating schema of the CSV fields
 schema = StructType([StructField('name', StringType(), True),StructField('age', IntegerType(), True)])
-# Creating a dataframe to use minioSelectCSV with the specified schema and load data from a CSV in S3 
-df = spark.read.format("minioSelectCSV").schema(schema).load("s3://sjm-airlines/people.csv")
+# Creating a dataframe from a csv in S3
+df = spark.read.format("csv").option("header", "true").load("s3a://sjm-airlines/people.csv")
 # Displaying all data in the CSV
 df.show()
 # Displaying all the data in the csv for which age is greater than 19
@@ -470,7 +367,15 @@ Select **spark-minio.ipynb** file and click on run, if everything went right, yo
 ![Jupyter Notebook](https://i.imgur.com/X47Kv93.jpg)
 
 ### Running Some Live Examples
-In Jupyter Notebook, go to File Tab > New Notebook > Python 3 (Or any other kernel). Try the following pyspark example on the data on present in Minio : 
+Before running the example, let's get compress the sample csv file with gzip compression.
+```sh
+# Generating gzip file named people.csv.gz file out of people.csv, while keeping the original file with -k flag
+gzip -k people.csv
+# Copying the csv.gz file to the bucket using minio client
+mc cp people.csv.gz data/sjm-airlines
+```
+
+In Jupyter Notebook, go to File Tab > New Notebook > Python 3 (Or any other kernel). Try the following pyspark example on the data present in Minio. Note that the gzip compression is automatically detected with the `.gz` extension and handled when loading it with Spark's native `csv` format.
 ```py
 import findspark
 findspark.init()
@@ -479,7 +384,7 @@ from pyspark.sql.types import *
 from pyspark.sql import SparkSession
 spark = SparkSession.builder.getOrCreate()
 schema = StructType([StructField('name', StringType(), True),StructField('age', IntegerType(), True)])
-df = spark.read.format("minioSelectCSV").schema(schema).load("s3://sjm-airlines/people", compression="gzip")
+df = spark.read.format("csv").option("header", "true").load("s3a://sjm-airlines/people.csv.gz")
 df.createOrReplaceTempView("people")
 print("List of all people :")
 df2.show()
